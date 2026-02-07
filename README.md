@@ -62,32 +62,3 @@ Returns a JSON array containing statistics for all running containers.
   }
 ]
 ```
-
-## Integration
-
-GopherWatch is designed to be easily integrated with custom status bars. Scripts are provided in the `scripts/` directory to help you get started.
-
-### Waybar
-
-You can use the provided script `scripts/waybar_stats.sh` as a custom module in Waybar.
-
-**Configuration Example:**
-
-```json
-"custom/docker": {
-    "exec": "/path/to/gopherwatch/scripts/waybar_stats.sh",
-    "return-type": "json",
-    "interval": 5
-}
-```
-
-### Eww (ElKowars wacky widgets)
-
-Use `scripts/eww_stats.sh` to fetch data for Eww widgets.
-
-**Configuration Example:**
-
-```yuck
-(defpoll docker_stats :interval "5s"
-  "scripts/eww_stats.sh")
-```
