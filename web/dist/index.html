@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GopherWatch Control Panel</title>
+    <style>
+        :root {
+            --bg: #0f111a;
+            --card-bg: #1a1c25;
+            --border: #2d3142;
+            --text-main: #e2e4ed;
+            --text-dim: #9499b0;
+            --accent: #589ed7;
+            /* Color estilo Go */
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px;
+            line-height: 1.5;
+        }
+
+        header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .status-bar {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 5px;
+        }
+
+        #containers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .container-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .container-card:hover {
+            border-color: var(--accent);
+        }
+
+        .name-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .container-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+            text-transform: uppercase;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.5s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>GopherWatch</h1>
+        <div class="status-bar" id="status-bar">System online | Fetching metrics...</div>
+    </header>
+
+    <div id="containers">
+    </div>
+
+    <script>
+        async function updateStats() {
+            try {
+                const res = await fetch('/v1/stats');
+                const data = await res.json();
+                const div = document.getElementById('containers');
+                const statusBar = document.getElementById('status-bar');
+
+                div.innerHTML = data.map(c => {
+                    const cpu = c.cpu_percentage.toFixed(1);
+                    const mem = c.mem_usage_mb.toFixed(1);
+                    return `
+                        <div class="container-card">
+                            <div class="name-row">
+                                <span class="container-name" title="${c.name}">${c.name.replace('/', '')}</span>
+                                <span class="badge">Running</span>
+                            </div>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <span class="label">CPU Usage</span>
+                                    <span class="value">${cpu}%</span>
+                                    <div class="progress-bar"><div class="progress-fill" style="width: ${Math.min(cpu, 100)}%"></div></div>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="label">Memory</span>
+                                    <span class="value">${mem} MB</span>
+                                    <div class="progress-bar"><div class="progress-fill" style="width: ${Math.min((mem / c.mem_limit_mb) * 100, 100)}%"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                statusBar.innerText = `System online | Active containers: ${data.length} | Last update: ${new Date().toLocaleTimeString()}`;
+            } catch (err) {
+                document.getElementById('status-bar').innerText = 'Connection error: Unable to reach GopherWatch API';
+            }
+        }
+
+        // Actualización cada 2 segundos
+        setInterval(updateStats, 2000);
+        updateStats(); // Carga inicial
+    </script>
+</body>
+
+</html>
